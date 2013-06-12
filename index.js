@@ -1,71 +1,52 @@
-var net = require('net')
-var cluster = require('cluster')
-var log = require('debug')('spawn-on-demand')
+"use strict"
 
-cluster.on('disconnect', function() {
-  log('disconnected worker', [].join.call(arguments, ', '))
-})
-.on('listening', function() {
-  log('worker listening', [].join.call(arguments, ', '))
-})
-.on('online', function() {
-  log('worker online', [].join.call(arguments, ', '))
-})
+var fork = require('child_process').fork
+var domain = require('domain')
 
 module.exports = function(port) {
-  var child = {
-    connections: 0,
-    connecting: false
-  }
+  var timeout = 10000
 
-  var server = net.createServer(function(socket) {
-    child.connections++
-    log('connecting. connections:', child.connections)
+  // chainable interfaces i guess is cool.
+  var api = {
+    timeout: function(newTimeout) {
+      timeout = parseInt(newTimeout, 10)
+      return api
+    },
+    spawn: function(args, fn) {
+      var child = undefined
 
-    function start(fn) {
-      if (!child.connecting && child.address) return fn(child.address)
-      cluster.once('listening', function(worker, address) {
-        console.log(require('util').inspect(worker.process, { showHidden: true, depth: 4}))
-        child.connecting = false
-        child.address = address
-        child.worker = worker
-        fn(address)
-      })
+      domain.create()
+      .on('error', onError)
+      .run(spawn)
 
-      if (child.connecting) return
-      log('booting new')
-      child.connecting = true
-      cluster.fork()
+      return {
+        close: close
+      }
+      
+      function onError(err) {
+        console.error(err)
+        child.kill()
+        process.exit(1)
+      }
+
+      function spawn() {
+        child = fork(__dirname + '/bin/spawn', [port, timeout].concat(args), {env: process.env})
+        .on('message', function onMessage(msg) {
+          if (msg != port) return
+            this.removeListener('listening', onMessage)
+          fn(null)
+        })
+
+        process.once('exit', function() {
+          close()
+        })
+      }
+
+      function close() {
+        child && child.disconnect()
+      }
     }
-    start(function(address) {
-      clearTimeout(child.shutdown)
-      socket.pipe(net.connect(address)).pipe(socket)
-      socket.on('close', function() {
-        child.connections--
-        log('connection closed. connections:', child.connections)
-        if (child.connections === 0) {
-          log('shutting down in %dms', 10000)
-          child.shutdown = setTimeout(function() {
-            log('shutting down')
-            child.worker.disconnect()
-            delete child.worker
-            delete child.address
-          }, 10000)
-        }
-      })
-    })
-  })
-  server.listen(port)
-
-  return {
-    spawn: spawn
   }
-}
 
-function spawn(args) {
-  args = args.split(' ')
-  cluster.setupMaster({
-    exec : args[0],
-    args : args.slice(1)
-  })
+  return api
 }

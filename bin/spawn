@@ -1,0 +1,3 @@
+#!/usr/bin/env node
+var args = process.argv.slice(2)
+require('../spawner').call(null, args[0], args[1], args.slice(2).join(' '))
