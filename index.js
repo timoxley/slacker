@@ -4,6 +4,7 @@ var fork = require('child_process').fork
 var domain = require('domain')
 
 module.exports = function(port) {
+  port = port || 0
   var timeout = 10000
 
   // chainable interfaces i guess is cool.
@@ -32,9 +33,9 @@ module.exports = function(port) {
       function spawn() {
         child = fork(__dirname + '/bin/spawn', [port, timeout].concat(args), {env: process.env})
         .on('message', function onMessage(msg) {
-          if (msg != port) return
-            this.removeListener('listening', onMessage)
-          fn(null)
+          if (port && msg != port) return
+          this.removeListener('listening', onMessage)
+          fn(null, parseInt(msg))
         })
 
         process.once('exit', function() {

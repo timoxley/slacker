@@ -13,7 +13,6 @@ cluster.on('disconnect', function(worker) {
 })
 
 module.exports = function(port, timeout, args) {
-
   var child = {
     connections: 0,
     connecting: false
@@ -21,8 +20,8 @@ module.exports = function(port, timeout, args) {
 
   var server = net.createServer(onConnection)
   server.listen(port, function() {
-    log('listening on %d', port)
-    process.send(port)
+    log('listening on %d', server.address().port)
+    if (process.send) process.send(server.address().port)
   })
 
   configureCluster(args)
