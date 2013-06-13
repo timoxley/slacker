@@ -1,6 +1,6 @@
 # Slacker
 
-### Awaken workers when they are needed, otherwise kill them.
+### Spawn workers when they are needed, otherwise kill them.
 
 ## Example
 
