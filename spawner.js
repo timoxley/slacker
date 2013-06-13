@@ -1,6 +1,7 @@
 var net = require('net')
 var cluster = require('cluster')
 var log = require('debug')('spawn-on-demand ' + process.pid)
+var EventEmitter = require('events').EventEmitter
 
 cluster.on('disconnect', function(worker) {
   log('disconnected worker %d.', worker.id)
@@ -13,9 +14,11 @@ cluster.on('disconnect', function(worker) {
 })
 
 module.exports = function(port, timeout, args) {
+  // TODO: should probably make a 'class'
+  // representing connection to worker
   var child = {
     connections: 0,
-    connecting: false
+    status: new EventEmitter()
   }
 
   var server = net.createServer(onConnection)
@@ -27,48 +30,62 @@ module.exports = function(port, timeout, args) {
   configureCluster(args)
 
   function onConnection(socket) {
-    socket.pause()
     child.connections++
-
-    // reset shutdown timeout on new connections
-    clearTimeout(child.shutdown)
-
     log('connecting. connections:', child.connections)
 
-    start(function(worker, address) {
-      // connect incoming request to service
-      socket.pipe(net.connect(address, function() {
-        socket.resume();
-      })).pipe(socket)
+    socket.on('end', onClose)
 
-      socket.on('close', onClose)
+    socket.pause() // wait for connection to service
+
+    clearTimeout(child.shutdown) // reset shutdown timeout on new connections
+
+    start(function(address) {
+      log('connecting to %d.', address.port)
+      var service = net.connect(address.port, function() {
+        log('piping request to %d.', address.port)
+        socket.pipe(service).pipe(socket)
+        socket.resume()
+      })
     })
 
     // call fn with connection address
-    // when we know it.
-    // returns immediately if we already have
+    // as soon as we know it.
+    // calls immediately if we already have
     // a connection open.
     function start(fn) {
-      if (!child.connecting && child.address) return fn(child.address)
-      if (child.connecting) return
+      if(child.address) return fn(child.address)
+      var status = child.status
+      status.once('ready', function() {
+        fn(child.address)
+      })
 
-      child.connecting = true
+      if (child.worker) {
+        log('connection waiting for worker')
+        return
+      }
 
-      log('booting new', args)
-      var worker = cluster
-      .fork()
-      // wait for child to start listening
-      .once('listening', function onListening(address) {
+      log('booting new worker', args)
+
+      var worker = child.worker = cluster.fork()
+      .once('listening', onListening)
+      .once('message', onMessage)
+
+      function onListening(address) {
         if (address.port === 0) return
-        fn(worker, address)
-      })
-      .on('message', function onMessage(msg) {
+        worker.removeListener('listening', onListening) 
+        worker.removeListener('message', onMessage) 
+        child.address = address
+        status.emit('ready')
+      }
+
+      function onMessage(msg) {
+        // node 0.8 mode
         if (!msg.port) return
-        worker.removeListener('message', onMessage)
-        worker.removeAllListeners('listening') // node 0.8 mode
-        return fn(worker, msg)
-      })
-      child.worker = worker
+        worker.removeListener('listening', onListening) 
+        worker.removeListener('message', onMessage) 
+        child.address = msg
+        status.emit('ready')
+      }
     }
 
     function onClose() {
