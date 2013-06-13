@@ -4,55 +4,97 @@ var fork = require('child_process').fork
 var fs = require('fs')
 var domain = require('domain')
 
-module.exports = function(port) {
-  port = port || 0
-  var timeout = 10000
+module.exports = Slacker
 
-  // chainable interfaces i guess is cool.
-  var api = {
-    timeout: function(newTimeout) {
-      timeout = parseInt(newTimeout, 10)
-      return api
-    },
-    spawn: function(args, fn) {
-      var child = undefined
+/**
+ * Create a Slacker instance for `service`.
+ *
+ * @param {String} service commandline path and arguments to run.
+ * @return {Slacker}
+ * @api public
+ */
 
-      domain.create()
-      .on('error', onError)
-      .run(spawn)
+function Slacker(service) {
+  if (!(this instanceof Slacker)) return new Slacker(service)
+  this._service = service
+  this._timeout = 10000
+}
 
-      return {
-        close: close
-      }
-      
-      function onError(err) {
-        console.error(err)
-        child.kill()
-        process.exit(1)
-      }
+/**
+ * Close down the service after `timeout` if
+ * there are no active connections.
+ *
+ * @param {Number} value timeout in milliseconds.
+ * @return {Slacker}
+ * @api public
+ */
 
-      function spawn() {
-        var cmd = args.split(' ')[0]
-        fs.exists(cmd, function(exists) {
-          if (!exists) return fn(new Error('command not found: ' + cmd))
-          child = fork(__dirname + '/bin/spawn', [port, timeout].concat(args), {env: process.env})
-          .on('message', function onMessage(msg) {
-            if (port && msg != port) return
-            this.removeListener('listening', onMessage)
-            fn(null, parseInt(msg))
-          })
+Slacker.prototype.timeout = function(value) {
+  this._timeout = parseInt(value, 10)
+  return this
+}
 
-          process.once('exit', function() {
-            close()
-          })
-        })
-      }
+/**
+ * Start listening on `port`. Calls `fn` when listening.
+ *
+ * @param {Number} port
+ * @param {Function} fn
+ * @return {Slacker}
+ * @api public
+ */
 
-      function close() {
-        child && child.disconnect()
-      }
-    }
+Slacker.prototype.listen = function(port, fn) {
+  if (typeof port === 'function') {
+    fn = port
+    port = null
   }
+  this._port = port = port || 0
+  fn = fn || function() {}
+  // here we go
+  spawn(this, fn)
+  return this
+}
 
-  return api
+/**
+ * Kill the slacker. Disconnects everything.
+ *
+ * @api public
+ */
+Slacker.prototype.close = function() {
+  this._isClosed = true
+  this._child && this._child.disconnect()
+}
+
+// TODO: tidy this
+function spawn(parent, fn) {
+  var port = parent._port
+  var timeout = parent._timeout
+  var args = parent._service
+  parent._child = undefined
+
+  domain
+  .create()
+  .on('error', function onError(err) {
+    console.error(err)
+    child && child.kill()
+    process.exit(1)
+  })
+  .run(function spawnProcess() {
+    var cmd = args.split(' ')[0]
+    fs.exists(cmd, function(exists) {
+      if (parent._isClosed) return
+      if (!exists) return fn(new Error('command not found: ' + cmd))
+      parent._child = fork(__dirname + '/bin/spawn', [port, timeout].concat(args), {env: process.env})
+      .on('message', function onMessage(msg) {
+        if (parent._isClosed) return
+        if (port && msg != port) return
+        this.removeListener('listening', onMessage)
+        fn(null, parseInt(msg, 10))
+      })
+
+      process.once('exit', function() {
+        parent.close()
+      })
+    })
+  })
 }

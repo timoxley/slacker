@@ -2,14 +2,14 @@ var assert = require('assert')
 var cluster = require('cluster')
 var request = require('request')
 var test = require('tape')
-var onDemand = require('../')
+var slacker = require('../')
 
 test('connections to different services', function(t) {
   t.plan(6)
 
-  var A = onDemand(7090)
+  var A = slacker(__dirname + '/fixtures/server.js A')
   .timeout(100)
-  .spawn(__dirname + '/fixtures/server.js A', function() {
+  .listen(7090, function() {
     request('http://localhost:7090', function(err, res) {
       t.ifError(err)
       t.equal(res.statusCode, 200)
@@ -18,9 +18,9 @@ test('connections to different services', function(t) {
     })
   })
 
-  var B = onDemand(7091)
+  var B = slacker(__dirname + '/fixtures/server.js B')
   .timeout(100)
-  .spawn(__dirname + '/fixtures/server.js B', function() {
+  .listen(7091, function() {
     request('http://localhost:7091', function(err, res) {
       t.ifError(err)
       t.equal(res.statusCode, 200)

@@ -1,7 +1,7 @@
 var onDemand = require('../../')
 
-var A = onDemand(9001)
+var A = onDemand(__dirname + '/server.js')
 .timeout(100)
-.spawn(__dirname + '/server.js', function(err, port) {
+.listen(9001, function(err, port) {
   console.log(arguments)
 })

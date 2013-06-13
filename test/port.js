@@ -2,25 +2,25 @@ var assert = require('assert')
 var cluster = require('cluster')
 var request = require('request')
 var test = require('tape')
-var onDemand = require('../')
+var slacker = require('../')
 
 test('port assignment', function(t) {
   t.plan(2)
 
-  var service1 = onDemand(7090)
+  var service1 = slacker(__dirname + '/fixtures/server.js')
   .timeout(100)
-  .spawn(__dirname + '/fixtures/server.js', function(err, port) {
+  .listen(7090, function(err, port) {
     t.ifError(err)
     t.equal(port, 7090)
     service1.close()
   })
 })
 
-test('random port assignment', function(t) {
+test('random port assignment with port 0', function(t) {
   t.plan(3)
-  var service2 = onDemand(0)
+  var service2 = slacker(__dirname + '/fixtures/server.js')
   .timeout(100)
-  .spawn(__dirname + '/fixtures/server.js', function(err, port) {
+  .listen(0, function(err, port) {
     t.ifError(err)
     t.ok(port)
     t.equal(typeof port, 'number')
@@ -30,9 +30,9 @@ test('random port assignment', function(t) {
 
 test('random port assignment with no port argument', function(t) {
   t.plan(3)
-  var service3 = onDemand()
+  var service3 = slacker(__dirname + '/fixtures/server.js')
   .timeout(100)
-  .spawn(__dirname + '/fixtures/server.js', function(err, port) {
+  .listen(function(err, port) {
     t.ifError(err)
     t.ok(port)
     t.equal(typeof port, 'number')
