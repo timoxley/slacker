@@ -1,6 +1,6 @@
 var net = require('net')
 var cluster = require('cluster')
-var log = require('debug')('spawn-on-demand ' + process.pid)
+var log = require('debug')(require('./package.json').name + ' ' + process.pid)
 var EventEmitter = require('events').EventEmitter
 
 cluster.on('disconnect', function(worker) {
