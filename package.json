@@ -1,6 +1,6 @@
 {
   "name": "slacker",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Boot services only when needed, otherwise go back to bed.",
   "main": "index.js",
   "scripts": {
