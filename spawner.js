@@ -31,7 +31,7 @@ module.exports = function(port, timeout, args) {
 
   function onConnection(socket) {
     child.connections++
-    log('connecting. connections:', child.connections)
+    log('connecting. connections: %d', child.connections)
 
     socket.on('end', onClose)
 
