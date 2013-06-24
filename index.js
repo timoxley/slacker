@@ -76,7 +76,7 @@ function spawn(parent, fn) {
   .create()
   .on('error', function onError(err) {
     console.error(err)
-    child && child.kill()
+    parent._child && parent._child.kill()
     process.exit(1)
   })
   .run(function spawnProcess() {
