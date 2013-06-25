@@ -1,7 +1,11 @@
+"use strict"
+
 var net = require('net')
 var cluster = require('cluster')
 var log = require('debug')(require('./package.json').name + ' ' + process.pid)
 var EventEmitter = require('events').EventEmitter
+
+var path = require('path')
 
 cluster.on('disconnect', function(worker) {
   log('disconnected worker %d.', worker.id)
@@ -124,8 +128,10 @@ process.on('disconnect', function() {
 
 function configureCluster(args) {
   args = args.split(' ')
+  var cmd = args[0]
+  process.title = 'slacker-' + path.basename(cmd)
   cluster.setupMaster({
-    exec : args[0],
+    exec : cmd,
     args : args.slice(1)
   })
 }
