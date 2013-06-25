@@ -60,6 +60,7 @@ Slacker.prototype.listen = function(port, fn) {
  *
  * @api public
  */
+Slacker.prototype.end =
 Slacker.prototype.close = function() {
   this._isClosed = true
   this._child && this._child.disconnect()

@@ -15,7 +15,7 @@ test('process is set to slacker-process-name', function(t) {
     exec('ps aux | pgrep -f slacker-server.js', function(err, stdout) {
       t.ifError(err, 'no error')
       t.ok(parseInt(stdout) == stdout, 'stdout is a process number')
-      service.close()
+      service.end()
     })
   })
 })
