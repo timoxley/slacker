@@ -2,6 +2,7 @@
 
 var fork = require('child_process').fork
 var fs = require('fs')
+var path = require('path')
 var domain = require('domain')
 
 module.exports = Slacker
@@ -82,6 +83,7 @@ function spawn(parent, fn) {
   })
   .run(function spawnProcess() {
     var cmd = args.split(' ')[0]
+    cmd = path.normalize(cmd)
     fs.exists(cmd, function(exists) {
       if (parent._isClosed) return
       if (!exists) return fn(new Error('command not found: ' + cmd))
