@@ -129,7 +129,7 @@ process.on('disconnect', function() {
 function configureCluster(args) {
   args = args.split(' ')
   var cmd = args[0]
-  process.title = 'slacker-' + path.basename(cmd)
+  process.title = 'slacker: ' + path.basename(cmd) + ' ' + args.slice(1)
   cluster.setupMaster({
     exec : cmd,
     args : args.slice(1)
