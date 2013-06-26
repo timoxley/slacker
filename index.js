@@ -84,9 +84,7 @@ function spawn(parent, fn) {
   .run(function spawnProcess() {
     var cmd = args.split(' ')[0]
     cmd = path.normalize(cmd)
-    fs.exists(cmd, function(exists) {
       if (parent._isClosed) return
-      if (!exists) return fn(new Error('command not found: ' + cmd))
       parent._child = fork(__dirname + '/bin/spawn', [port, timeout].concat(args), {env: process.env})
       .on('message', function onMessage(msg) {
         if (parent._isClosed) return
@@ -98,6 +96,5 @@ function spawn(parent, fn) {
       process.once('exit', function() {
         parent.close()
       })
-    })
   })
 }
