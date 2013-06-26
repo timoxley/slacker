@@ -4,6 +4,7 @@ var net = require('net')
 var cluster = require('cluster')
 var log = require('debug')(require('./package.json').name + ' ' + process.pid)
 var EventEmitter = require('events').EventEmitter
+var which = require('which')
 
 var path = require('path')
 
@@ -25,13 +26,15 @@ module.exports = function(port, timeout, args) {
     status: new EventEmitter()
   }
 
-  var server = net.createServer(onConnection)
-  server.listen(port, function() {
-    log('listening on %d', server.address().port)
-    if (process.send) process.send(server.address().port)
+  configureCluster(args, function() {
+    var server = net.createServer(onConnection)
+    server.listen(port, function() {
+      log('listening on %d', server.address().port)
+      if (process.send) process.send(server.address().port)
+    })
   })
 
-  configureCluster(args)
+
 
   function onConnection(socket) {
     child.connections++
@@ -70,7 +73,7 @@ module.exports = function(port, timeout, args) {
 
       log('booting new worker', args)
 
-      var worker = child.worker = cluster.fork()
+      var worker = child.worker = cluster.fork({env: process.env})
       .once('listening', onListening)
       .once('message', onMessage)
 
@@ -126,12 +129,15 @@ process.on('disconnect', function() {
   })
 })
 
-function configureCluster(args) {
+function configureCluster(args, fn) {
   args = args.split(' ')
   var cmd = args[0]
-  process.title = 'slacker: ' + path.basename(cmd) + ' ' + args.slice(1)
-  cluster.setupMaster({
-    exec : cmd,
-    args : args.slice(1)
+  which(cmd, function(err, cmd) {
+    if (err) return fn(err)
+    process.title = 'slacker: ' + path.basename(cmd) + ' ' + args.slice(1)
+    return fn(null, cluster.setupMaster({
+      exec : cmd,
+      args : args.slice(1)
+    }))
   })
 }
