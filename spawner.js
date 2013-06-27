@@ -72,8 +72,14 @@ module.exports = function(port, timeout, args) {
       }
 
       log('booting new worker', args)
-
-      var worker = child.worker = cluster.fork({env: process.env})
+      // Note:
+      // JSON parse/stringify here
+      // Prevents strange error:
+      //   child_process.js:608
+      //   envPairs.push(key + '=' + env[key]);
+      //   TypeError: Cannot convert object to primitive value
+      var env = JSON.parse(JSON.stringify({env: process.env}))
+      var worker = child.worker = cluster.fork(env)
       .once('listening', onListening)
       .once('message', onMessage)
 
