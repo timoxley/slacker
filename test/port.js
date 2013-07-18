@@ -11,7 +11,7 @@ test('port assignment', function(t) {
   .timeout(100)
   .listen(7094, function(err, port) {
     t.ifError(err)
-    t.equal(port, 7090)
+    t.equal(port, 7094)
     service1.close()
   })
 })
