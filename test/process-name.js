@@ -12,7 +12,7 @@ test('process is set to slacker: process-name', function(t) {
   var service = slacker(__dirname + '/fixtures/server.js')
   .timeout(100)
   .listen(7095, function() {
-    exec('ps aux | pgrep -f "slacker: server.js"', function(err, stdout) {
+    exec('pgrep -f "slacker: server.js"', function(err, stdout) {
       t.ifError(err, 'no error')
       t.looseEqual(parseInt(stdout), stdout.trim(), 'stdout is a process number: ' + parseInt(stdout))
       service.end()
@@ -26,8 +26,10 @@ test('process title includes arguments ', function(t) {
   var service = slacker(__dirname + '/fixtures/server.js --help')
   .timeout(100)
   .listen(7096, function() {
-    exec('ps aux | pgrep -f "slacker: server.js --help"', function(err, stdout) {
+    exec('pgrep -fl "slacker: server.js --help"', function(err, stdout) {
       t.ifError(err, 'no error')
+      console.log(stdout)
+      stdout = stdout.split(' ')[0]
       t.looseEqual(parseInt(stdout), stdout.trim(), 'stdout is a process number: ' + parseInt(stdout))
       service.end()
     })
