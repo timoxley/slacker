@@ -9,7 +9,7 @@ test('http connections', function(t) {
 
   var service = slacker(__dirname + '/fixtures/server.js')
   .timeout(100)
-  .listen(7090, function() {
+  .listen(7091, function() {
     request('http://localhost:7090', function(err, res) {
       t.ifError(err)
       t.equal(res.statusCode, 200)

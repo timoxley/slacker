@@ -9,7 +9,7 @@ test('port assignment', function(t) {
 
   var service1 = slacker(__dirname + '/fixtures/server.js')
   .timeout(100)
-  .listen(7090, function(err, port) {
+  .listen(7094, function(err, port) {
     t.ifError(err)
     t.equal(port, 7090)
     service1.close()

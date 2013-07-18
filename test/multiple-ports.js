@@ -9,8 +9,8 @@ test('connections to different services', function(t) {
 
   var A = slacker(__dirname + '/fixtures/server.js A')
   .timeout(100)
-  .listen(7090, function() {
-    request('http://localhost:7090', function(err, res) {
+  .listen(7092, function() {
+    request('http://localhost:7092', function(err, res) {
       t.ifError(err)
       t.equal(res.statusCode, 200)
       t.equal(res.body, 'A')
@@ -20,8 +20,8 @@ test('connections to different services', function(t) {
 
   var B = slacker(__dirname + '/fixtures/server.js B')
   .timeout(100)
-  .listen(7091, function() {
-    request('http://localhost:7091', function(err, res) {
+  .listen(7093, function() {
+    request('http://localhost:7093', function(err, res) {
       t.ifError(err)
       t.equal(res.statusCode, 200)
       t.equal(res.body, 'B')
