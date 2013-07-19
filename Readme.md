@@ -1,8 +1,8 @@
+![https://travis-ci.org/timoxley/slacker.png](https://travis-ci.org/timoxley/slacker.png)
+
 # Slacker
 
 ### Save precious system resources by creating slack network services whom only spawn when required.
-
-![https://travis-ci.org/timoxley/slacker.png](https://travis-ci.org/timoxley/slacker.png)
 
 ## Why
 
