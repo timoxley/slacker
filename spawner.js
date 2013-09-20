@@ -21,6 +21,7 @@ cluster.on('disconnect', function(worker) {
 module.exports = function(port, timeout, args) {
   // TODO: should probably make a 'class'
   // representing connection to worker
+  log('starting listener on port %d', port)
   var child = {
     connections: 0,
     status: new EventEmitter()
