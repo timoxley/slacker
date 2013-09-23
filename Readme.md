@@ -6,9 +6,9 @@ Save precious system resources by creating lazy network services that are only s
 
 ## How
 
-*Slacker listens for arbitrary TCP connections on behalf of your 
+**Slacker listens for arbitrary TCP connections on behalf of your 
 resource hungry processes, allowing them to remain dormant until
-required.*
+required.**
 
 When a request for that service comes in, slacker buffers the request, 
 boots the service if it is not already running,
