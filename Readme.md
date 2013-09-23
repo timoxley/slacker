@@ -2,26 +2,13 @@
 
 # Slacker
 
-### Save precious system resources by creating slack network services whom only spawn when required.
-
-## Why
-
-If you have a process or number of processes that need to respond to network events
-but consume an unsustainable amount of system resources while they are
-running, it is efficient to simply shut these services down while
-they are not required. 
-
-Node doesn't currently have a non-hacky, reliable mechnism for unloading modules 
-from memory, and this is ok, because there's a good workaround: The easiest 
-way to clean up memory and prevent unnecessary idle work is to just isolate
-that work to a process and kill it when it is no longer required. This
-is the job of slacker.
+Save precious system resources by creating lazy network services that are only spawned when required.
 
 ## How
 
-Slacker listens for arbitrary TCP connections on behalf of your 
+*Slacker listens for arbitrary TCP connections on behalf of your 
 resource hungry processes, allowing them to remain dormant until
-required.
+required.*
 
 When a request for that service comes in, slacker buffers the request, 
 boots the service if it is not already running,
@@ -49,14 +36,27 @@ slacker(__dirname + '/some-http-service.js') // service to forward requests to
 
 ```
 
-## Node 0.8 support
+## Why
+
+If you have a process or number of processes that need to respond to network events
+but consume an unsustainable amount of system resources while they are
+running, it is efficient to simply shut these services down while
+they are not required. 
+
+Node doesn't currently have a non-hacky, reliable mechnism for unloading modules 
+from memory, and this is ok, because there's a good workaround: The easiest 
+way to clean up memory and prevent unnecessary idle work is to just isolate
+that work to a process and kill it when it is no longer required. This
+is the job of `slacker`.
+
+## Node 0.8.x support
 
 Normally, slacker can deduce what port your worker is listening on
 but if you're using node < 0.9.2 [this feature](https://github.com/joyent/node/pull/4104),
 mean **you must manually have your worker tell the slacker process what port
 it's listening on**:
 
-### Example
+### Node 0.8.x Example
 
 ```js
 //In the app you want spawned by slacker
