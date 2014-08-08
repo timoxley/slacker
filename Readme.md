@@ -41,7 +41,7 @@ slacker(__dirname + '/some-http-service.js') // service to forward requests to
 If you have a process or number of processes that need to respond to network events
 but consume an unsustainable amount of system resources while they are
 running, it is efficient to simply shut these services down while
-they are not required. 
+they are not required!
 
 Node doesn't currently have a non-hacky, reliable mechnism for unloading modules 
 from memory, and this is ok, because there's a good workaround: The easiest 
