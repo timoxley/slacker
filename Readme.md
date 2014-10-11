@@ -1,6 +1,6 @@
 ![https://travis-ci.org/timoxley/slacker.png](https://travis-ci.org/timoxley/slacker.png)
 
-# SLACK
+# Slacker
 
 Save precious system resources by creating lazy network services that are only spawned when required.
 
