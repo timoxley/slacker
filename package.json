@@ -14,12 +14,12 @@
   "author": "Tim Oxley",
   "license": "MIT",
   "dependencies": {
-    "debug": "~0.7.2",
+    "debug": "~2.0.0",
     "which": "~1.0.5"
   },
   "devDependencies": {
-    "request": "~2.21.0",
-    "tape": "~1.0.4"
+    "request": "~2.45.0",
+    "tape": "~3.0.0"
   },
   "readmeFilename": "Readme.md",
   "gitHead": "011a35c49ce7ab5972e1f8743aed8669c935b983",
