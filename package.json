@@ -23,8 +23,6 @@
     "request": "~2.45.0",
     "tape": "~3.0.0"
   },
-  "readmeFilename": "Readme.md",
-  "gitHead": "011a35c49ce7ab5972e1f8743aed8669c935b983",
   "directories": {
     "example": "examples",
     "test": "test"
@@ -35,5 +33,9 @@
     "demand",
     "lazy",
     "service"
-  ]
+  ],
+  "bugs": {
+    "url": "https://github.com/timoxley/spawn-on-demand/issues"
+  },
+  "homepage": "https://github.com/timoxley/spawn-on-demand"
 }
