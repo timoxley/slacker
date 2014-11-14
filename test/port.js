@@ -40,3 +40,22 @@ test('random port assignment with no port argument', function(t) {
   })
 })
 
+
+test('fixed port on service', function(t) {
+  var service3 = slacker(__dirname + '/fixtures/server-port.js 8009')
+  .timeout(10000)
+  .start()
+  .listen(function(err, port) {
+    t.ifError(err)
+    t.ok(port)
+    t.equal(typeof port, 'number')
+    t.equal(typeof port, 'number')
+    request.get('http://localhost:8009', function(err, res, body) {
+      t.ifError(err)
+      t.equal(res.statusCode, 200)
+      t.equal(body.trim(), 'success')
+      t.end()
+      service3.close()
+    })
+  })
+})

@@ -1,9 +1,9 @@
 var http = require('http')
 var server = http.createServer(function(req, res) {
   res.statusCode = 200
-  res.end((process.argv[2] || 'success'))
+  res.end('success')
 })
 
-server.listen(process.argv[3], function() {
+server.listen(process.argv[2], function() {
   console.log(server.address())
 })

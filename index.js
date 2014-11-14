@@ -20,6 +20,7 @@ function Slacker(service) {
   if (!(this instanceof Slacker)) return new Slacker(service)
   this._service = service
   this._timeout = 10000
+  this._silent = true
 }
 
 /**
@@ -33,6 +34,22 @@ function Slacker(service) {
 
 Slacker.prototype.timeout = function(value) {
   this._timeout = parseInt(value, 10)
+  return this
+}
+
+
+Slacker.prototype.start = function() {
+  this._doStart = true
+  return this
+}
+
+Slacker.prototype.silent = function() {
+  this._silent = true
+  return this
+}
+
+Slacker.prototype.verbose = function() {
+  this._silent = false
   return this
 }
 
@@ -70,8 +87,12 @@ Slacker.prototype.close = function() {
 
 // TODO: tidy this
 function spawn(parent, fn) {
+  if (!parent) throw new Error('missing parent')
+  if (!('_port' in parent)) throw new Error('missing parent._port')
   var port = parent._port
+  if (!('_timeout' in parent)) throw new Error('missing parent._timeout')
   var timeout = parent._timeout
+  if (!parent._service) throw new Error('missing parent._service')
   var args = parent._service
   parent._child = undefined
 
@@ -83,19 +104,22 @@ function spawn(parent, fn) {
     process.exit(1)
   })
   .run(function spawnProcess() {
-    var cmd = args.split(' ')[0]
-    cmd = path.normalize(cmd)
+    if (parent._isClosed) return
+    parent._child = fork(__dirname + '/bin/spawn', [
+      '--port='+port,
+      '--timeout='+timeout,
+      parent._doStart ? '--start' : '--no-start',
+      '--'
+    ].concat(args.split(' ')), {env: process.env, silent: parent._silent})
+    .on('message', function onMessage(msg) {
       if (parent._isClosed) return
-      parent._child = fork(__dirname + '/bin/spawn', [port, timeout].concat(args), {env: process.env})
-      .on('message', function onMessage(msg) {
-        if (parent._isClosed) return
-        if (port && msg != port) return
-        this.removeListener('listening', onMessage)
-        fn(null, parseInt(msg, 10))
-      })
+      if (port && msg != port) return
+      this.removeListener('listening', onMessage)
+      fn(null, parseInt(msg, 10))
+    })
 
-      process.once('exit', function() {
-        parent.close()
-      })
+    process.once('exit', function() {
+      parent.close()
+    })
   })
 }

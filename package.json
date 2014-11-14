@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Boot services only when needed, otherwise go back to bed.",
   "main": "index.js",
+  "bin": {
+    "slacker": "bin/slacker.js"
+  },
   "engines": {
     "node": ">=0.8.0"
   },
@@ -16,12 +19,14 @@
   "author": "Tim Oxley",
   "license": "MIT",
   "dependencies": {
-    "debug": "~2.0.0",
+    "debug": "~2.1.0",
+    "minimist": "~1.1.0",
+    "request": "~2.48.0",
     "which": "~1.0.5"
   },
   "devDependencies": {
     "request": "~2.45.0",
-    "tape": "~3.0.0"
+    "tape": "~3.0.3"
   },
   "directories": {
     "example": "examples",

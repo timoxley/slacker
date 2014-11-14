@@ -18,7 +18,12 @@ cluster.on('disconnect', function(worker) {
   log('worker online %d.', worker.id)
 })
 
-module.exports = function(port, timeout, args) {
+module.exports = function(opts) {
+  var port = opts.port
+  var doStart = opts.start
+  var timeout = opts.timeout
+  var args = opts.args
+
   // TODO: should probably make a 'class'
   // representing connection to worker
   log('starting listener on port %d', port)
@@ -31,7 +36,15 @@ module.exports = function(port, timeout, args) {
     var server = net.createServer(onConnection)
     server.listen(port, function() {
       log('listening on %d', server.address().port)
-      if (process.send) process.send(server.address().port)
+      if (!doStart) {
+        if (process.send) process.send(server.address().port)
+        return
+      }
+      log('starting...')
+      start(function() {
+        log('started.')
+        if (process.send) process.send(server.address().port)
+      })
     })
   })
 
@@ -56,52 +69,6 @@ module.exports = function(port, timeout, args) {
       })
     })
 
-    // call fn with connection address
-    // as soon as we know it.
-    // calls immediately if we already have
-    // a connection open.
-    function start(fn) {
-      if(child.address) return fn(child.address)
-      var status = child.status
-      status.once('ready', function() {
-        fn(child.address)
-      })
-
-      if (child.worker) {
-        log('connection waiting for worker')
-        return
-      }
-
-      log('booting new worker', args)
-      // Note:
-      // JSON parse/stringify here
-      // Prevents strange error:
-      //   child_process.js:608
-      //   envPairs.push(key + '=' + env[key]);
-      //   TypeError: Cannot convert object to primitive value
-      var env = JSON.parse(JSON.stringify({env: process.env}))
-      var worker = child.worker = cluster.fork(env)
-      .once('listening', onListening)
-      .once('message', onMessage)
-
-      function onListening(address) {
-        if (address.port === 0) return
-        worker.removeListener('listening', onListening) 
-        worker.removeListener('message', onMessage) 
-        child.address = address
-        status.emit('ready')
-      }
-
-      function onMessage(msg) {
-        // node 0.8 mode
-        if (!msg.port) return
-        worker.removeListener('listening', onListening) 
-        worker.removeListener('message', onMessage) 
-        child.address = msg
-        status.emit('ready')
-      }
-    }
-
     function onClose() {
       child.connections--
       log('connection closed. connections:', child.connections)
@@ -119,6 +86,53 @@ module.exports = function(port, timeout, args) {
       }
     }
   }
+
+  // call fn with connection address
+  // as soon as we know it.
+  // calls immediately if we already have
+  // a connection open.
+  function start(fn) {
+    if(child.address) return fn(child.address)
+    var status = child.status
+    status.once('ready', function() {
+      fn(child.address)
+    })
+
+    if (child.worker) {
+      log('connection waiting for worker')
+      return
+    }
+
+    log('booting new worker', args)
+    // Note:
+    // JSON parse/stringify here
+    // Prevents strange error:
+    //   child_process.js:608
+    //   envPairs.push(key + '=' + env[key]);
+    //   TypeError: Cannot convert object to primitive value
+    var env = JSON.parse(JSON.stringify({env: process.env}))
+    var worker = child.worker = cluster.fork(env)
+    .once('listening', onListening)
+    .once('message', onMessage)
+
+    function onListening(address) {
+      if (address.port === 0) return
+      worker.removeListener('listening', onListening) 
+      worker.removeListener('message', onMessage) 
+      child.address = address
+      status.emit('ready')
+    }
+
+    function onMessage(msg) {
+      // node 0.8 mode
+      if (!msg.port) return
+      worker.removeListener('listening', onListening) 
+      worker.removeListener('message', onMessage) 
+      child.address = msg
+      status.emit('ready')
+    }
+  }
+
 }
 
 process.on('disconnect', function() {
@@ -137,7 +151,6 @@ process.on('disconnect', function() {
 })
 
 function configureCluster(args, fn) {
-  args = args.split(' ')
   var cmd = args[0]
   which(cmd, function(err, cmd) {
     if (err) return fn(err)
