@@ -8,21 +8,32 @@ var which = require('which')
 
 var path = require('path')
 
-cluster.on('disconnect', function(worker) {
-  log('disconnected worker %d.', worker.id)
-})
-.on('listening', function(worker) {
-  log('worker listening %d.', worker.id)
-})
-.on('online', function(worker) {
-  log('worker online %d.', worker.id)
-})
+
 
 module.exports = function(opts) {
+
   var port = opts.port
   var doStart = opts.start
   var timeout = opts.timeout
   var args = opts.args
+  var daemon = opts.daemon
+  var minConnections = opts.minConnections
+
+  cluster.on('disconnect', function(worker) {
+    log('disconnected worker %d.', worker.id)
+      if (cluster.workers.length) return
+      if (!daemon) {
+        log('Not daemonized. Shutting down server.')
+        shutdown()
+      }
+  })
+  .on('listening', function(worker) {
+    log('worker listening %d.', worker.id)
+  })
+  .on('online', function(worker) {
+    log('worker online %d.', worker.id)
+  })
+
 
   // TODO: should probably make a 'class'
   // representing connection to worker
@@ -31,9 +42,10 @@ module.exports = function(opts) {
     connections: 0,
     status: new EventEmitter()
   }
-
+  var server = undefined
   configureCluster(args, function() {
-    var server = net.createServer(onConnection)
+    if (server) throw new Error('Already have server!')
+    server = net.createServer(onConnection)
     server.listen(port, function() {
       log('listening on %d', server.address().port)
       if (!doStart) {
@@ -73,11 +85,13 @@ module.exports = function(opts) {
       child.connections--
       log('connection closed. connections:', child.connections)
 
-      // start shutdown timeout if no more connections
-      if (child.connections === 0) {
+      // start shutdown timeout if minimal connections
+      if (child.connections <= minConnections) {
+        log('connections (%d) hit minimum (%d)', child.connections, minConnections)
         // TODO: make timeout configurable
         log('shutting down in %dms', timeout)
         child.shutdown = setTimeout(function() {
+          if (!child.worker) return // already dead or dying
           log('shutting down worker %d.', child.worker.id)
           if (child.worker.process.connected) child.worker.disconnect()
           delete child.worker
@@ -137,18 +151,22 @@ module.exports = function(opts) {
 
 process.on('disconnect', function() {
   log('parent disconnected')
+  shutdown()
+})
+
+function shutdown() {
   setTimeout(function() {
     log('cluster.disconnect timed out. killing.')
     for (var id in cluster.workers) {
       cluster.workers[id].kill()
     }
     process.exit()
-  }, 3000)
+  }, 1000)
   cluster.disconnect(function() {
     log('disconnected all workers!')
     process.exit()
   })
-})
+}
 
 function configureCluster(args, fn) {
   var cmd = args[0]

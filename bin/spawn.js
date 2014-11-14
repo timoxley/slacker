@@ -10,5 +10,7 @@ require('../spawner')({
   port: argv.port,
   timeout: argv.timeout,
   start: argv.start,
+  daemon: argv.daemon,
+  minConnections: argv.minConnections,
   args: argv['--']
 })

@@ -53,6 +53,16 @@ Slacker.prototype.verbose = function() {
   return this
 }
 
+Slacker.prototype.daemon = function() {
+  this._daemon = true
+  return this
+}
+
+Slacker.prototype.minConnections = function(min) {
+  this._minConnections = min
+  return this
+}
+
 /**
  * Start listening on `port`. Calls `fn` when listening.
  *
@@ -82,7 +92,11 @@ Slacker.prototype.listen = function(port, fn) {
 Slacker.prototype.end =
 Slacker.prototype.close = function() {
   this._isClosed = true
-  this._child && this._child.disconnect()
+  if (!this._child) return
+
+  if (this._child.connected) {
+    this._child.disconnect()
+  }
 }
 
 // TODO: tidy this
@@ -95,11 +109,12 @@ function spawn(parent, fn) {
   if (!parent._service) throw new Error('missing parent._service')
   var args = parent._service
   parent._child = undefined
-
+  var minConnections = parent._minConnections || 0
   domain
   .create()
   .on('error', function onError(err) {
     console.error(err)
+    console.error(err.stack)
     parent._child && parent._child.kill()
     process.exit(1)
   })
@@ -108,6 +123,7 @@ function spawn(parent, fn) {
     parent._child = fork(__dirname + '/bin/spawn', [
       '--port='+port,
       '--timeout='+timeout,
+      '--minConnections='+minConnections,
       parent._doStart ? '--start' : '--no-start',
       '--'
     ].concat(args.split(' ')), {env: process.env, silent: parent._silent})
